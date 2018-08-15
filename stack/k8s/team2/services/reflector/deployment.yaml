@@ -1,0 +1,33 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: reflector-v1
+  namespace: team2
+  labels:
+    app: reflector
+    version: v1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: reflector
+        version: v1
+    spec:
+      serviceAccountName: reflector
+      containers:
+      - name: reflector
+        image: 520887410018.dkr.ecr.eu-west-1.amazonaws.com/okro/hellod/reflector:v1.0.0
+        resources:
+          requests:
+            cpu: "10m"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/okro
+        ports:
+        - containerPort: 4040
+        - containerPort: 4041
+      volumes:
+      - name: config-volume
+        configMap:
+          name: reflector-v1-cfg

@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package hello.v1;
+
+service Hello {
+    rpc Hi (HiRequest) returns (HiResponse);
+    rpc Bye (ByeRequest) returns (ByeResponse);
+}
+
+message HiRequest {
+    string name = 1;
+}
+
+message HiResponse {
+    string message = 1;
+}
+
+message ByeRequest {
+    string name = 1;
+}
+
+message ByeResponse {
+    string message = 1;
+}

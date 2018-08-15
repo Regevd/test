@@ -1,0 +1,10 @@
+apiVersion: authentication.istio.io/v1alpha1
+kind: MeshPolicy
+metadata:
+  labels:
+    app: istio-security
+    release: istio
+  name: default
+spec:
+  peers:
+  - mtls: {}

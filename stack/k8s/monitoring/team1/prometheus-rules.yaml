@@ -1,0 +1,10 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    prometheus: team1
+    role: alert-rules
+  name: prometheus-team1-rules
+  namespace: team1-system
+spec:
+  groups: []

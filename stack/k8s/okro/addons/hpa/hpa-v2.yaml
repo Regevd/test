@@ -1,0 +1,17 @@
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: dude-v1
+  namespace: team1
+spec:
+  maxReplicas: 10
+  metrics:
+  - type: Pods
+    pods:
+      metricName: io_http_server_latency
+      targetAverageValue: 1000m
+  minReplicas: 1
+  scaleTargetRef:
+    apiVersion: extensions/v1beta1
+    kind: Deployment
+    name: dude-v1

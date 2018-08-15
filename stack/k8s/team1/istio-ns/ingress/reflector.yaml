@@ -1,0 +1,39 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: reflector-gateway
+  namespace: team1
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "reflector.adamg.dev.okro.io"
+#    tls:
+#      mode: SIMPLE
+#      serverCertificate: /etc/istio/ingressgateway-certs/tls.crt
+#      privateKey: /etc/istio/ingressgateway-certs/tls.key
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: reflector
+  namespace: team1
+spec:
+  hosts:
+  - "reflector.adamg.dev.okro.io"
+  gateways:
+  - reflector-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: reflector
+        port:
+          number: 4040

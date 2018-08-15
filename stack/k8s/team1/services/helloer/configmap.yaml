@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: helloer-v1-cfg
+  namespace: team1
+  labels:
+    app: helloer
+    version: v1
+data:
+  config.yaml: |-
+    port: 5050
+    metrics-port: 5051
+    jaeger-addr: http://jaeger-collector.team1-system:14268

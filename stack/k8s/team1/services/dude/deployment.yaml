@@ -1,0 +1,33 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dude-v1
+  namespace: team1
+  labels:
+    app: dude
+    version: v1
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: dude
+        version: v1
+    spec:
+      serviceAccountName: dude
+      containers:
+      - name: dude
+        image: 520887410018.dkr.ecr.eu-west-1.amazonaws.com/okro/hellod/dude:v1.0.0
+        resources:
+          requests:
+            cpu: "10m"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/okro
+        ports:
+        - containerPort: 8080
+        - containerPort: 8081
+      volumes:
+      - name: config-volume
+        configMap:
+          name: dude-v1-cfg

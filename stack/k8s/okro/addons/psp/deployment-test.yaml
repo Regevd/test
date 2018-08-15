@@ -1,0 +1,77 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: itester
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: itester
+  template:
+    metadata:
+      labels:
+        app: itester
+        version: v2
+    spec:
+      containers:
+      - name: itester
+        securityContext:
+          capabilities:
+            drop: ["all"]
+            add: ["NET_BIND_SERVICE"]
+          privileged: false
+          allowPrivilegeEscalation: false
+        image: dimssss/istio-tester:0.8
+        env:
+        - name: "PORT"
+          value: "80"
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: itester
+  labels:
+    version: v2
+spec:
+  selector:
+    app: itester
+  ports:
+    - name: http
+      port: 80
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: itester
+spec:
+  hosts:
+  - itester
+  gateways:
+  - mesh
+  http:
+  - match:
+    - uri:
+        prefix: "/i2"
+    rewrite:
+      uri: "/info"
+    route:
+    - destination:
+        host: itester
+        subset: v2
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: itester
+spec:
+  host: itester
+  trafficPolicy:
+    tls:
+      mode: ISTIO_MUTUAL
+  subsets:
+  - name: v2
+    labels:
+      version: v2

@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dude-v2-cfg
+  namespace: team1
+  labels:
+    app: dude
+    version: v2
+data:
+  config.yaml: |-
+    port: 8080
+    metrics-port: 8081
+    helloer-addr: helloer:5050
+    echoer-addr: echoer:6060
+    jaeger-addr: http://jaeger-collector.team1-system:14268
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dude-v2
+  namespace: team1
+  labels:
+    app: dude
+    version: v2
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: dude
+        version: v2
+    spec:
+      serviceAccountName: dude
+      containers:
+      - name: dude
+        image: 520887410018.dkr.ecr.eu-west-1.amazonaws.com/okro/hellod/dude:v2.0.0
+        resources:
+          requests:
+            cpu: "10m"
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/okro
+        ports:
+        - containerPort: 8080
+        - containerPort: 8081
+      volumes:
+      - name: config-volume
+        configMap:
+          name: dude-v2-cfg

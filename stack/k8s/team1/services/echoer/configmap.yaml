@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: echoer-v1-cfg
+  namespace: team1
+  labels:
+    app: echoer
+    version: v1
+data:
+  config.yaml: |-
+    port: 6060
+    metrics-port: 6061
+    kafka-brokers: "172.31.37.120:9494,172.31.39.30:9494,172.31.43.134:9494"
+    error-topic: hellod.failures
+    jaeger-addr: http://jaeger-collector.team1-system:14268

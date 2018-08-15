@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kube2iam-test-pod
+  annotations:
+    iam.amazonaws.com/role: kube2iam-${USER}-test
+spec:
+  containers:
+  - name: kube2iam-test
+    image: mesosphere/aws-cli
+    command: ["aws", "sts", "get-caller-identity"]
+  restartPolicy: Never
