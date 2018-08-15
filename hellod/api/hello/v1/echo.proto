@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+import "hello/v1/hello.proto";
+
+package hello.v1;
+
+service Echo {
+    rpc Echo (HiRequest) returns (HiRequest);
+}

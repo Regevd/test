@@ -1,0 +1,56 @@
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: null
+  labels:
+    kops.k8s.io/cluster: $NAME
+  name: master-eu-west-1a
+spec:
+  image: kope.io/k8s-1.9-debian-jessie-amd64-hvm-ebs-2018-03-11
+  machineType: $KOPS_MASTER_TYPE
+  maxPrice: "$KOPS_MASTER_MAX_PRICE"
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: master-eu-west-1a
+  role: Master
+  subnets:
+  - eu-west-1a
+---
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: null
+  labels:
+    kops.k8s.io/cluster: $NAME
+  name: master-eu-west-1b
+spec:
+  image: kope.io/k8s-1.9-debian-jessie-amd64-hvm-ebs-2018-03-11
+  machineType: $KOPS_MASTER_TYPE
+  maxPrice: "$KOPS_MASTER_MAX_PRICE"
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: master-eu-west-1b
+  role: Master
+  subnets:
+  - eu-west-1b
+---
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: null
+  labels:
+    kops.k8s.io/cluster: $NAME
+  name: master-eu-west-1c
+spec:
+  image: kope.io/k8s-1.9-debian-jessie-amd64-hvm-ebs-2018-03-11
+  machineType: $KOPS_MASTER_TYPE
+  maxPrice: "$KOPS_MASTER_MAX_PRICE"
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: master-eu-west-1c
+  role: Master
+  subnets:
+  - eu-west-1c

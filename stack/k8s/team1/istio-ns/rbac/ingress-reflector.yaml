@@ -1,0 +1,26 @@
+apiVersion: "rbac.istio.io/v1alpha1"
+kind: ServiceRole
+metadata:
+  name: ingress-reflector
+  namespace: team1
+spec:
+  rules:
+  - services:
+    - "reflector.team1.svc.cluster.local"
+    paths:
+    - "/hi/*"
+    - "/bye/*"
+    methods:
+    - "GET"
+---
+apiVersion: "rbac.istio.io/v1alpha1"
+kind: ServiceRoleBinding
+metadata:
+  name: ingress-reflector
+  namespace: team1
+spec:
+  subjects:
+  - user: "cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"
+  roleRef:
+    kind: ServiceRole
+    name: ingress-reflector

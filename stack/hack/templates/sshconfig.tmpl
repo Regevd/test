@@ -1,0 +1,21 @@
+Host bastion
+  Hostname bastion.$NAME
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null
+  User admin
+  IdentityFile ~/.ssh/dev-okro-io-admin
+
+Host master
+  Hostname api.internal.$NAME
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null
+  User admin
+  IdentityFile ~/.ssh/dev-okro-io-admin
+  ProxyCommand ssh bastion -W %h:%p
+
+Host $CIDR.*
+  User admin
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null
+  IdentityFile ~/.ssh/dev-okro-io-admin
+  ProxyCommand ssh bastion -W %h:%p

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: watcher-v1-cfg
+  namespace: team1
+  labels:
+    app: watcher
+    version: v1
+data:
+  config.yaml: |-
+    metrics-port: 7071
+    kafka-brokers: "172.31.37.120:9494,172.31.39.30:9494,172.31.43.134:9494"
+    error-topic: hellod.failures
+    jaeger-addr: http://jaeger-collector.team1-system:14268

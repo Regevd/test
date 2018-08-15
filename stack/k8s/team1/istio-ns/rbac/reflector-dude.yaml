@@ -1,0 +1,51 @@
+apiVersion: "rbac.istio.io/v1alpha1"
+kind: ServiceRole
+metadata:
+  name: hi-dude
+  namespace: team1
+spec:
+  rules:
+  - services:
+    - "dude.team1.svc.cluster.local"
+    paths:
+    - "/hi/*"
+    methods:
+    - "GET"
+---
+apiVersion: "rbac.istio.io/v1alpha1"
+kind: ServiceRole
+metadata:
+  name: bye-dude
+  namespace: team1
+spec:
+  rules:
+  - services:
+    - "dude.team1.svc.cluster.local"
+    paths:
+    - "/bye/*"
+    methods:
+    - "GET"
+---
+apiVersion: "rbac.istio.io/v1alpha1"
+kind: ServiceRoleBinding
+metadata:
+  name: hi-dude-binding
+  namespace: team1
+spec:
+  subjects:
+  - user: "cluster.local/ns/team1/sa/reflector"
+  roleRef:
+    kind: ServiceRole
+    name: hi-dude
+---
+apiVersion: "rbac.istio.io/v1alpha1"
+kind: ServiceRoleBinding
+metadata:
+  name: bye-dude-binding
+  namespace: team1
+spec:
+  subjects:
+  - user: "cluster.local/ns/team2/sa/reflector"
+  roleRef:
+    kind: ServiceRole
+    name: bye-dude

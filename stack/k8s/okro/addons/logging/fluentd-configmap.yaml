@@ -1,0 +1,406 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentd-config
+  namespace: okro-system
+  labels:
+    k8s-app: fluentd
+data:
+  fluentd.conf: |
+    # Use the config specified by the FLUENTD_CONFIG environment variable
+    @include "#{ENV['FLUENTD_CONFIG']}"
+
+  # A config for running Fluentd as a daemon which collects logs and forwards
+  # the logs using a forward_output to a Fluentd configured as an aggregator,
+  # with a forward_input.
+  fluentd-forwarder.conf: |
+    @include general.conf
+    @include prometheus.conf
+
+    @include apiserver-audit-input.conf
+    @include systemd-input.conf
+    @include kubernetes-input.conf
+
+    # Send to the aggregator
+    @include forward-output.conf
+
+  # A config for running Fluentd as HA ready deployment for receiving forwarded
+  # logs, and then applying filtering, and parsing before sending them to
+  # storage.
+  fluentd-aggregator.conf: |
+    # Receive from the forwarder
+    @include forward-input.conf
+
+    @include general.conf
+    @include prometheus.conf
+
+    @include systemd-filter.conf
+    @include kubernetes-filter.conf
+    #@include apiserver-audit-filter.conf
+    @include extra.conf
+
+    # Send to storage
+    @include output.conf
+
+  forward-input.conf: |
+    <source>
+      @type forward
+      port 24224
+      bind 0.0.0.0
+    </source>
+
+  forward-output.conf: |
+    <match **>
+      @type forward
+      require_ack_response true
+      ack_response_timeout 30
+      recover_wait 10s
+      heartbeat_interval 1s
+      phi_threshold 16
+      send_timeout 10s
+      hard_timeout 10s
+      expire_dns_cache 15
+
+      heartbeat_type transport
+
+      buffer_chunk_limit 2M
+      buffer_queue_limit 32
+      flush_interval 5s
+      max_retry_wait 15
+      disable_retry_limit
+      num_threads 4
+
+      <server>
+        name fluentd-aggregator
+        host fluentd-aggregator.okro-system.svc.cluster.local
+        weight 60
+      </server>
+    </match>
+
+  general.conf: |
+    # Prevent fluentd from handling records containing its own logs. Otherwise
+    # it can lead to an infinite loop, when error in sending one message generates
+    # another message which also fails to be sent and so on.
+    <match fluent.**>
+      @type null
+    </match>
+
+    # Used for health checking
+    <source>
+      @type http
+      port 9880
+      bind 0.0.0.0
+    </source>
+
+    # Prevent collection of healthcheck logs
+    <match fluentd.**>
+      @type null
+    </match>
+
+    # Emits internal metrics to every minute, and also exposes them on port
+    # 24220. Useful for determining if an output plugin is retryring/erroring,
+    # or determining the buffer queue length.
+    <source>
+      @type monitor_agent
+      bind 0.0.0.0
+      port 24220
+    </source>
+
+  prometheus.conf: |
+    # input plugin that is required to expose metrics by other prometheus
+    # plugins, such as the prometheus_monitor input below.
+    <source>
+      @type prometheus
+      bind 0.0.0.0
+      port 24231
+      metrics_path /metrics
+    </source>
+
+    # input plugin that collects metrics from MonitorAgent and exposes them
+    # as prometheus metrics
+    <source>
+      @type prometheus_monitor
+      # update the metrics every 5 seconds
+      interval 5
+      <labels>
+        host ${hostname}
+      </labels>
+    </source>
+
+    <source>
+      @type prometheus_output_monitor
+      interval 5
+      <labels>
+        host ${hostname}
+      </labels>
+    </source>
+
+    <source>
+      @type prometheus_tail_monitor
+      interval 5
+      <labels>
+        host ${hostname}
+      </labels>
+    </source>
+
+  systemd-input.conf: |
+    # Logs from systemd-journal for interesting services.
+    # TODO(random-liu): Remove this after cri container runtime rolls out.
+    <source>
+      @id journald-docker
+      @type systemd
+      matches [{ "_SYSTEMD_UNIT": "docker.service" }]
+      <storage>
+        @type local
+        persistent true
+        path /var/log/fluentd/systemd-docker.pos
+      </storage>
+      read_from_head true
+      tag systemd.docker
+    </source>
+
+    <source>
+      @id journald-container-runtime
+      @type systemd
+      matches [{ "_SYSTEMD_UNIT": "{{ container_runtime }}.service" }]
+      <storage>
+        @type local
+        persistent true
+        path /var/log/fluentd/systemd-container-runtime.pos
+      </storage>
+      read_from_head true
+      tag systemd.container-runtime
+    </source>
+
+    <source>
+      @id journald-kubelet
+      @type systemd
+      matches [{ "_SYSTEMD_UNIT": "kubelet.service" }]
+      <storage>
+        @type local
+        persistent true
+        path /var/log/fluentd/systemd-kubelet.pos
+      </storage>
+      read_from_head true
+      tag systemd.kubelet
+    </source>
+
+    <source>
+      @id journald-node-problem-detector
+      @type systemd
+      matches [{ "_SYSTEMD_UNIT": "node-problem-detector.service" }]
+      <storage>
+        @type local
+        persistent true
+        path /var/log/fluentd/systemd-node-problem-detector.pos
+      </storage>
+      read_from_head true
+      tag systemd.node-problem-detector
+    </source>
+    
+    <source>
+      @id kernel
+      @type systemd
+      matches [{ "_TRANSPORT": "kernel" }]
+      <storage>
+        @type local
+        persistent true
+        path /var/log/fluentd/systemd-kernel.pos
+      </storage>
+      <entry>
+        fields_strip_underscores true
+        fields_lowercase true
+      </entry>
+      read_from_head true
+      tag systemd.kernel
+    </source>
+
+  systemd-filter.conf: |
+    <filter systemd.kubelet>
+      @type parser
+      format kubernetes
+      reserve_data true
+      key_name MESSAGE
+      suppress_parse_error_log true
+    </filter>
+
+    <filter systemd.docker>
+      @type parser
+      format /^time="(?<time>[^)]*)" level=(?<severity>[^ ]*) msg="(?<message>[^"]*)"( err="(?<error>[^"]*)")?( statusCode=($<status_code>\d+))?/
+      reserve_data true
+      key_name MESSAGE
+      suppress_parse_error_log true
+    </filter>
+
+  kubernetes-input.conf: |
+    # Capture Kubernetes pod logs
+    # The kubelet creates symlinks that capture the pod name, namespace,
+    # container name & Docker container ID to the docker logs for pods in the
+    # /var/log/containers directory on the host.
+    <source>
+      @id fluentd-containers.log
+      @type tail
+      path /var/log/containers/*.log
+      exclude_path ["/var/log/containers/fluentd*.log"]
+      pos_file /var/log/fluentd/fluentd-containers.log.pos
+      time_format %Y-%m-%dT%H:%M:%S.%NZ
+      tag kubernetes.*
+      format json
+      read_from_head true
+    </source>
+
+  kubernetes-filter.conf: |
+    # This is a filter which does nothing
+    # OR TODO: Check why we miss logs without it
+    <filter **>
+      @type passthru
+    </filter>
+
+    # Query the API for extra metadata.
+    <filter kubernetes.**>
+      @type kubernetes_metadata
+    </filter>
+
+    <filter kubernetes.**>
+      @type parser
+      key_name log
+      reserve_data true
+      reserve_time true
+      remove_key_name_field true
+      hash_value_field parsed
+      <parse>
+        @type multi_format
+        <pattern>
+          format json
+          keep_time_key true
+        </pattern>
+        <pattern>
+          format kubernetes
+        </pattern>
+        <pattern>
+          format none
+        </pattern>
+      </parse>
+    </filter>
+
+    # rewrite_tag_filter does not support nested fields like
+    # kubernetes.container_name, so this exists to flatten the fields
+    # so we can use them in our rewrite_tag_filter
+    <filter kubernetes.**>
+      @type record_transformer
+      enable_ruby true
+      <record>
+        kubernetes_namespace_container_name ${record["kubernetes"]["namespace_name"]}.${record["kubernetes"]["container_name"]}
+      </record>
+    </filter>
+
+    #retag based on the namespace and container name
+    # output tag is kube.{{namespace}}.{{container_name}}
+    # output tag cannot start with "kubernetes" (https://docs.fluentd.org/v1.0/articles/out_rewrite_tag_filter#faq)
+    <match kubernetes.**>
+      @type rewrite_tag_filter
+      <rule>
+        key     kubernetes_namespace_container_name
+        pattern ^(.+)$
+        tag     kube.$1
+      </rule>
+    </match>
+
+    # Remove the unnecessary field as the information is already available on
+    # other fields.
+    <filter kube.**>
+      @type record_transformer
+      remove_keys kubernetes_namespace_container_name
+    </filter>
+
+  apiserver-audit-input.conf: |
+    <source>
+      @id fluentd-audit.log
+      @type tail
+      # audit log path of kube-apiserver
+      path /var/log/kube-apiserver-audit.log
+      pos_file /var/log/fluentd/fluentd-kube-apiserver-audit.pos
+      format json
+      time_key time
+      time_format %Y-%m-%dT%H:%M:%S.%N%z
+      tag audit
+    </source>
+  
+  # split audit by namespace
+  apiserver-audit-filter.conf: |
+    <filter audit>
+      #https://github.com/fluent/fluent-plugin-rewrite-tag-filter/issues/13
+      @type record_transformer
+      enable_ruby
+      <record>
+        namespace ${record["objectRef"].nil? ? "none":(record["objectRef"]["namespace"].nil? ?  "none":record["objectRef"]["namespace"])}
+      </record>
+    </filter>
+
+    <match audit>
+      # route audit according to namespace element in context
+      @type rewrite_tag_filter
+      <rule>
+        key     namespace
+        pattern ^(.+)
+        tag     ${tag}.$1
+      </rule>
+    </match>
+
+    <filter audit.**>
+      @type record_transformer
+      remove_keys namespace
+    </filter>
+
+  output.conf: |
+    # <match audit.**>
+    # </match>
+
+    <match kube.team1.**>
+      @type logzio_buffered
+
+      endpoint_url "https://listener.logz.io:8071?token=#{ENV['LOGZIO_TEAM1_TOKEN']}&type=kubernetes"
+
+      output_include_time true
+      output_include_tags true
+      http_idle_timeout 10
+
+      <buffer>
+        @type file
+        path /tmp/fluentd-buffer-team1
+        flush_thread_count 4
+        flush_interval 10s
+        chunk_limit_size 64m      # Logz.io bulk limit is decoupled from chunk_limit_size. Set whatever you want.
+        queue_limit_length 4096
+      </buffer>
+    </match>
+
+    <match **>
+      @type logzio_buffered
+
+      endpoint_url "https://listener.logz.io:8071?token=#{ENV['LOGZIO_TOKEN']}&type=kubernetes"
+
+      output_include_time true
+      output_include_tags true
+      http_idle_timeout 10
+      retry_count 17
+
+      <buffer>
+          @type file
+          path /tmp/fluentd-buffer-global
+          flush_thread_count 4
+          flush_interval 10s
+          chunk_limit_size 64m      # Logz.io bulk limit is decoupled from chunk_limit_size. Set whatever you want.
+          queue_limit_length 4096
+      </buffer>
+    </match>
+
+  extra.conf: |
+    # Example filter that adds an extra field "cluster_name" to all log
+    # messages:
+    # <filter **>
+    #   @type record_transformer
+    #   <record>
+    #     cluster_name "your_cluster_name"
+    #   </record>
+    # </filter>

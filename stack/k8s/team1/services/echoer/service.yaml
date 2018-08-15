@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: echoer
+  namespace: team1
+  labels:
+    app: echoer
+spec:
+  ports:
+  - port: 6060
+    name: grpc
+  - port: 6061
+    name: metrics
+  selector:
+    app: echoer

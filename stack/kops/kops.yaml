@@ -1,0 +1,340 @@
+apiVersion: kops/v1alpha2
+kind: Cluster
+metadata:
+  creationTimestamp: null
+  name: k8s.regevd.dev.okro.io
+spec:
+  api:
+    loadBalancer:
+      type: Public
+      idleTimeoutSeconds: 1800
+  authorization:
+    rbac: {}
+  channel: stable
+  cloudProvider: aws
+  clusterDNSDomain: cluster.local
+  configBase: s3://dev-okro-io/k8s.regevd.dev.okro.io
+  etcdClusters:
+  - name: main
+    version: 3.1.17
+    image: gcr.io/google_containers/etcd:3.1.17
+    enableEtcdTLS: true
+    enableTLSAuth: true
+    etcdMembers:
+    - instanceGroup: master-eu-west-1a
+      name: a
+      encryptedVolume: true
+    - instanceGroup: master-eu-west-1b
+      name: b
+      encryptedVolume: true
+    - instanceGroup: master-eu-west-1c
+      name: c
+      encryptedVolume: true
+  - name: events
+    version: 3.1.17
+    image: gcr.io/google_containers/etcd:3.1.17
+    enableEtcdTLS: true
+    enableTLSAuth: true
+    etcdMembers:
+    - instanceGroup: master-eu-west-1a
+      name: a
+      encryptedVolume: true
+    - instanceGroup: master-eu-west-1b
+      name: b
+      encryptedVolume: true
+    - instanceGroup: master-eu-west-1c
+      name: c
+      encryptedVolume: true
+  encryptionConfig: true
+  fileAssets:
+    - name: audit-policy.conf template
+      path: /srv/kubernetes/audit-policy.conf
+      roles:
+      - Master
+      content: YXBpVmVyc2lvbjogYXVkaXQuazhzLmlvL3YxYmV0YTEKa2luZDogUG9saWN5CnJ1bGVzOgogICMgVGhlIGZvbGxvd2luZyByZXF1ZXN0cyB3ZXJlIG1hbnVhbGx5IGlkZW50aWZpZWQgYXMgaGlnaC12b2x1bWUgYW5kIGxvdy1yaXNrLAogICMgc28gZHJvcCB0aGVtLgogIC0gbGV2ZWw6IE5vbmUKICAgIHVzZXJzOiBbInN5c3RlbTprdWJlLXByb3h5Il0KICAgIHZlcmJzOiBbIndhdGNoIl0KICAgIHJlc291cmNlczoKICAgICAgLSBncm91cDogIiIgIyBjb3JlCiAgICAgICAgcmVzb3VyY2VzOiBbImVuZHBvaW50cyIsICJzZXJ2aWNlcyIsICJzZXJ2aWNlcy9zdGF0dXMiXQogIC0gbGV2ZWw6IE5vbmUKICAgICMgSW5ncmVzcyBjb250cm9sbGVyIHJlYWRzICdjb25maWdtYXBzL2luZ3Jlc3MtdWlkJyB0aHJvdWdoIHRoZSB1bnNlY3VyZWQgcG9ydC4KICAgICMgVE9ETygjNDY5ODMpOiBDaGFuZ2UgdGhpcyB0byB0aGUgaW5ncmVzcyBjb250cm9sbGVyIHNlcnZpY2UgYWNjb3VudC4KICAgIHVzZXJzOiBbInN5c3RlbTp1bnNlY3VyZWQiXQogICAgbmFtZXNwYWNlczogWyJrdWJlLXN5c3RlbSJdCiAgICB2ZXJiczogWyJnZXQiXQogICAgcmVzb3VyY2VzOgogICAgICAtIGdyb3VwOiAiIiAjIGNvcmUKICAgICAgICByZXNvdXJjZXM6IFsiY29uZmlnbWFwcyJdCiAgLSBsZXZlbDogTm9uZQogICAgdXNlcnM6IFsia3ViZWxldCJdICMgbGVnYWN5IGt1YmVsZXQgaWRlbnRpdHkKICAgIHZlcmJzOiBbImdldCJdCiAgICByZXNvdXJjZXM6CiAgICAgIC0gZ3JvdXA6ICIiICMgY29yZQogICAgICAgIHJlc291cmNlczogWyJub2RlcyIsICJub2Rlcy9zdGF0dXMiXQogIC0gbGV2ZWw6IE5vbmUKICAgIHVzZXJHcm91cHM6IFsic3lzdGVtOm5vZGVzIl0KICAgIHZlcmJzOiBbImdldCJdCiAgICByZXNvdXJjZXM6CiAgICAgIC0gZ3JvdXA6ICIiICMgY29yZQogICAgICAgIHJlc291cmNlczogWyJub2RlcyIsICJub2Rlcy9zdGF0dXMiXQogIC0gbGV2ZWw6IE5vbmUKICAgIHVzZXJzOgogICAgICAtIHN5c3RlbTprdWJlLWNvbnRyb2xsZXItbWFuYWdlcgogICAgICAtIHN5c3RlbTprdWJlLXNjaGVkdWxlcgogICAgICAtIHN5c3RlbTpzZXJ2aWNlYWNjb3VudDprdWJlLXN5c3RlbTplbmRwb2ludC1jb250cm9sbGVyCiAgICB2ZXJiczogWyJnZXQiLCAidXBkYXRlIl0KICAgIG5hbWVzcGFjZXM6IFsia3ViZS1zeXN0ZW0iXQogICAgcmVzb3VyY2VzOgogICAgICAtIGdyb3VwOiAiIiAjIGNvcmUKICAgICAgICByZXNvdXJjZXM6IFsiZW5kcG9pbnRzIl0KICAtIGxldmVsOiBOb25lCiAgICB1c2VyczogWyJzeXN0ZW06YXBpc2VydmVyIl0KICAgIHZlcmJzOiBbImdldCJdCiAgICByZXNvdXJjZXM6CiAgICAgIC0gZ3JvdXA6ICIiICMgY29yZQogICAgICAgIHJlc291cmNlczogWyJuYW1lc3BhY2VzIiwgIm5hbWVzcGFjZXMvc3RhdHVzIiwgIm5hbWVzcGFjZXMvZmluYWxpemUiXQogICMgRG9uJ3QgbG9nIEhQQSBmZXRjaGluZyBtZXRyaWNzLgogIC0gbGV2ZWw6IE5vbmUKICAgIHVzZXJzOgogICAgICAtIHN5c3RlbTprdWJlLWNvbnRyb2xsZXItbWFuYWdlcgogICAgdmVyYnM6IFsiZ2V0IiwgImxpc3QiXQogICAgcmVzb3VyY2VzOgogICAgICAtIGdyb3VwOiAibWV0cmljcy5rOHMuaW8iCiAgIyBEb24ndCBsb2cgdGhlc2UgcmVhZC1vbmx5IFVSTHMuCiAgLSBsZXZlbDogTm9uZQogICAgbm9uUmVzb3VyY2VVUkxzOgogICAgICAtIC9oZWFsdGh6KgogICAgICAtIC92ZXJzaW9uCiAgICAgIC0gL21ldHJpY3MKICAgICAgLSAvc3dhZ2dlcioKICAjIERvbid0IGxvZyBldmVudHMgcmVxdWVzdHMuCiAgLSBsZXZlbDogTm9uZQogICAgcmVzb3VyY2VzOgogICAgICAtIGdyb3VwOiAiIiAjIGNvcmUKICAgICAgICByZXNvdXJjZXM6IFsiZXZlbnRzIl0KICAjIG5vZGUgYW5kIHBvZCBzdGF0dXMgY2FsbHMgZnJvbSBub2RlcyBhcmUgaGlnaC12b2x1bWUgYW5kIGNhbiBiZSBsYXJnZSwgZG9uJ3QgbG9nIHJlc3BvbnNlcyBmb3IgZXhwZWN0ZWQgdXBkYXRlcyBmcm9tIG5vZGVzCiAgLSBsZXZlbDogUmVxdWVzdAogICAgdXNlcnM6IFsia3ViZWxldCIsICJzeXN0ZW06bm9kZS1wcm9ibGVtLWRldGVjdG9yIiwgInN5c3RlbTpzZXJ2aWNlYWNjb3VudDprdWJlLXN5c3RlbTpub2RlLXByb2JsZW0tZGV0ZWN0b3IiXQogICAgdmVyYnM6IFsidXBkYXRlIiwicGF0Y2giXQogICAgcmVzb3VyY2VzOgogICAgICAtIGdyb3VwOiAiIiAjIGNvcmUKICAgICAgICByZXNvdXJjZXM6IFsibm9kZXMvc3RhdHVzIiwgInBvZHMvc3RhdHVzIl0KICAtIGxldmVsOiBSZXF1ZXN0CiAgICB1c2VyR3JvdXBzOiBbInN5c3RlbTpub2RlcyJdCiAgICB2ZXJiczogWyJ1cGRhdGUiLCJwYXRjaCJdCiAgICByZXNvdXJjZXM6CiAgICAgIC0gZ3JvdXA6ICIiICMgY29yZQogICAgICAgIHJlc291cmNlczogWyJub2Rlcy9zdGF0dXMiLCAicG9kcy9zdGF0dXMiXQogICMgZGVsZXRlY29sbGVjdGlvbiBjYWxscyBjYW4gYmUgbGFyZ2UsIGRvbid0IGxvZyByZXNwb25zZXMgZm9yIGV4cGVjdGVkIG5hbWVzcGFjZSBkZWxldGlvbnMKICAtIGxldmVsOiBSZXF1ZXN0CiAgICB1c2VyczogWyJzeXN0ZW06c2VydmljZWFjY291bnQ6a3ViZS1zeXN0ZW06bmFtZXNwYWNlLWNvbnRyb2xsZXIiXQogICAgdmVyYnM6IFsiZGVsZXRlY29sbGVjdGlvbiJdCiAgIyBTZWNyZXRzLCBDb25maWdNYXBzLCBhbmQgVG9rZW5SZXZpZXdzIGNhbiBjb250YWluIHNlbnNpdGl2ZSAmIGJpbmFyeSBkYXRhLAogICMgc28gb25seSBsb2cgYXQgdGhlIE1ldGFkYXRhIGxldmVsLgogIC0gbGV2ZWw6IE1ldGFkYXRhCiAgICByZXNvdXJjZXM6CiAgICAgIC0gZ3JvdXA6ICIiICMgY29yZQogICAgICAgIHJlc291cmNlczogWyJzZWNyZXRzIiwgImNvbmZpZ21hcHMiXQogICAgICAtIGdyb3VwOiAiYXV0aGVudGljYXRpb24uazhzLmlvIgogICAgICAgIHJlc291cmNlczogWyJ0b2tlbnJldmlld3MiXQogICMgR2V0IHJlcHNvbnNlcyBjYW4gYmUgbGFyZ2U7IHNraXAgdGhlbS4KICAtIGxldmVsOiBSZXF1ZXN0CiAgICB2ZXJiczogWyJnZXQiLCAibGlzdCIsICJ3YXRjaCJdCiAgICByZXNvdXJjZXM6CiAgICAgIC0gZ3JvdXA6ICIiICMgY29yZQogICAgICAtIGdyb3VwOiAiYWRtaXNzaW9ucmVnaXN0cmF0aW9uLms4cy5pbyIKICAgICAgLSBncm91cDogImFwaWV4dGVuc2lvbnMuazhzLmlvIgogICAgICAtIGdyb3VwOiAiYXBpcmVnaXN0cmF0aW9uLms4cy5pbyIKICAgICAgLSBncm91cDogImFwcHMiCiAgICAgIC0gZ3JvdXA6ICJhdXRoZW50aWNhdGlvbi5rOHMuaW8iCiAgICAgIC0gZ3JvdXA6ICJhdXRob3JpemF0aW9uLms4cy5pbyIKICAgICAgLSBncm91cDogImF1dG9zY2FsaW5nIgogICAgICAtIGdyb3VwOiAiYmF0Y2giCiAgICAgIC0gZ3JvdXA6ICJjZXJ0aWZpY2F0ZXMuazhzLmlvIgogICAgICAtIGdyb3VwOiAiZXh0ZW5zaW9ucyIKICAgICAgLSBncm91cDogIm1ldHJpY3MuazhzLmlvIgogICAgICAtIGdyb3VwOiAibmV0d29ya2luZy5rOHMuaW8iCiAgICAgIC0gZ3JvdXA6ICJwb2xpY3kiCiAgICAgIC0gZ3JvdXA6ICJyYmFjLmF1dGhvcml6YXRpb24uazhzLmlvIgogICAgICAtIGdyb3VwOiAic2NoZWR1bGluZy5rOHMuaW8iCiAgICAgIC0gZ3JvdXA6ICJzZXR0aW5ncy5rOHMuaW8iCiAgICAgIC0gZ3JvdXA6ICJzdG9yYWdlLms4cy5pbyIKICAgICAgLSBncm91cDogImNyZC5wcm9qZWN0Y2FsaWNvLm9yZyIKICAgICAgLSBncm91cDogImNvbmZpZy5pc3Rpby5pbyIKICAgICAgLSBncm91cDogIm1vbml0b3JpbmcuY29yZW9zLmNvbSIKICAjIERlZmF1bHQgbGV2ZWwgZm9yIGtub3duIEFQSXMKICAtIGxldmVsOiBSZXF1ZXN0UmVzcG9uc2UKICAgIHJlc291cmNlczoKICAgICAgLSBncm91cDogIiIgIyBjb3JlCiAgICAgIC0gZ3JvdXA6ICJhZG1pc3Npb25yZWdpc3RyYXRpb24uazhzLmlvIgogICAgICAtIGdyb3VwOiAiYXBpZXh0ZW5zaW9ucy5rOHMuaW8iCiAgICAgIC0gZ3JvdXA6ICJhcGlyZWdpc3RyYXRpb24uazhzLmlvIgogICAgICAtIGdyb3VwOiAiYXBwcyIKICAgICAgLSBncm91cDogImF1dGhlbnRpY2F0aW9uLms4cy5pbyIKICAgICAgLSBncm91cDogImF1dGhvcml6YXRpb24uazhzLmlvIgogICAgICAtIGdyb3VwOiAiYXV0b3NjYWxpbmciCiAgICAgIC0gZ3JvdXA6ICJiYXRjaCIKICAgICAgLSBncm91cDogImNlcnRpZmljYXRlcy5rOHMuaW8iCiAgICAgIC0gZ3JvdXA6ICJleHRlbnNpb25zIgogICAgICAtIGdyb3VwOiAibWV0cmljcy5rOHMuaW8iCiAgICAgIC0gZ3JvdXA6ICJuZXR3b3JraW5nLms4cy5pbyIKICAgICAgLSBncm91cDogInBvbGljeSIKICAgICAgLSBncm91cDogInJiYWMuYXV0aG9yaXphdGlvbi5rOHMuaW8iCiAgICAgIC0gZ3JvdXA6ICJzY2hlZHVsaW5nLms4cy5pbyIKICAgICAgLSBncm91cDogInNldHRpbmdzLms4cy5pbyIKICAgICAgLSBncm91cDogInN0b3JhZ2UuazhzLmlvIgogICAgICAtIGdyb3VwOiAiY3JkLnByb2plY3RjYWxpY28ub3JnIgogICAgICAtIGdyb3VwOiAiY29uZmlnLmlzdGlvLmlvIgogICAgICAtIGdyb3VwOiAibW9uaXRvcmluZy5jb3Jlb3MuY29tIgogICMgRGVmYXVsdCBsZXZlbCBmb3IgYWxsIG90aGVyIHJlcXVlc3RzLgogIC0gbGV2ZWw6IE1ldGFkYXRhCiMgT21pdCBSZXF1ZXN0UmVjZWl2ZWQgc3RhZ2UgZnJvbSBhbGwgcmVxdWVzdHMuCm9taXRTdGFnZXM6IAogIC0gIlJlcXVlc3RSZWNlaXZlZCIKCg
+      isBase64: true
+  iam:
+    allowContainerRegistry: true
+    legacy: false
+  additionalPolicies:
+      node: |
+        [
+          {
+            "Effect": "Allow",
+            "Action": ["sts:AssumeRole"],
+            "Resource": "*"
+          }
+        ]
+  kubeAPIServer:
+    image: gcr.io/google_containers/kube-apiserver:v1.9.9
+    securePort: 443
+    insecurePort: 8080
+    #insecurePort: 0 # need to support HealthCheck using secure port first
+    address: 127.0.0.1
+    admissionControl:
+    - Initializers
+    - NamespaceLifecycle
+    - LimitRanger
+    - ServiceAccount
+    - PersistentVolumeLabel
+    - DefaultStorageClass
+    - DefaultTolerationSeconds
+    - MutatingAdmissionWebhook
+    - ValidatingAdmissionWebhook
+    - NodeRestriction
+    - ResourceQuota
+    - AlwaysPullImages
+    - Priority
+    #- DenyEscalatingExec # temoprary disabled to allow access
+    #- SecurityContextDeny # temporary disabled to allow access
+    #- PodSecurityPolicy # waiting for policy implementation
+    #- EventRateLimit # first need to: 1. support admission-control-config-file argument. 2. implement the policy
+    allowPrivileged: true
+    anonymousAuth: false
+    auditLogMaxAge: 31
+    auditLogMaxBackups: 10
+    auditLogMaxSize: 100
+    auditLogPath: /var/log/kube-apiserver-audit.log
+    auditPolicyFile: /srv/kubernetes/audit-policy.conf
+    authorizationMode: "Node,RBAC"
+    featureGates:
+      PodPriority: "true"
+    oidcIssuerURL: "https://dev-405616.oktapreview.com/oauth2/default"
+    oidcClientID: 0oafiqm6by9qgsCE40h7
+    oidcUsernameClaim: user_email
+    oidcUsernamePrefix: "oidc:"
+    oidcGroupsClaim: groups
+    oidcGroupsPrefix: "oidc:"
+    runtimeConfig:
+      "scheduling.k8s.io/v1alpha1": "true"
+      "admissionregistration.k8s.io/v1alpha1": "true"
+  kubeControllerManager:
+    image: gcr.io/google_containers/kube-controller-manager:v1.9.9
+    terminatedPodGCThreshold: 200
+    useServiceAccountCredentials: true
+    horizontalPodAutoscalerUseRestClients: true
+  kubeProxy:
+    image: gcr.io/google_containers/kube-proxy:v1.9.9
+  kubeScheduler:
+    image: gcr.io/google_containers/kube-scheduler:v1.9.9
+  kubelet:
+    anonymousAuth: false
+    podInfraContainerImage: gcr.io/google_containers/pause-amd64:3.0
+    kubeletCgroups: "/systemd/system.slice"
+    runtimeCgroups: "/systemd/system.slice"
+    readOnlyPort: 0
+    streamingConnectionIdleTimeout: "10m"
+    featureGates:
+      #RotateKubeletClientCertificate: "true" # has no meaning without --rotate-certificates=true
+      #RotateKubeletServerCertificate: "true" # has no meaning without --rotate-server-certificates=true
+    enableCustomMetrics: true
+    authenticationTokenWebhook: true
+    authorizationMode: "Webhook"
+  masterKubelet:
+    anonymousAuth: false
+    podInfraContainerImage: gcr.io/google_containers/pause-amd64:3.0
+    kubeletCgroups: "/systemd/system.slice"
+    runtimeCgroups: "/systemd/system.slice"
+    registerSchedulable: false
+    readOnlyPort: 0
+    streamingConnectionIdleTimeout: "10m"
+    featureGates:
+      #RotateKubeletClientCertificate: "true" # has no meaning without --rotate-certificates=true
+      #RotateKubeletServerCertificate: "true" # has no meaning without --rotate-server-certificates=true
+  kubernetesApiAccess:
+  - 0.0.0.0/0
+  kubernetesVersion: 1.9.9
+  masterPublicName: api.k8s.regevd.dev.okro.io
+  networking:
+    canal:
+      prometheusMetricsEnabled: true
+  nonMasqueradeCIDR: 100.64.0.0/10
+  sshAccess:
+  - 0.0.0.0/0
+  # tf2kops start
+  networkID: vpc-0c1f76c238b30fe82
+  subnets:
+  - egress: nat-0d92b6e4c5c7710ce
+    id: subnet-055c1bcae458a7fb3
+    name: eu-west-1a
+    type: Private
+    zone: eu-west-1a
+  - egress: nat-01e8d99bee3a47c12
+    id: subnet-0978b498067997c5c
+    name: eu-west-1b
+    type: Private
+    zone: eu-west-1b
+  - egress: nat-00da78e4ff9336c40
+    id: subnet-0d02d64f9acbeba66
+    name: eu-west-1c
+    type: Private
+    zone: eu-west-1c
+  - id: subnet-059950ac37492b974
+    name: utility-eu-west-1a
+    type: Utility
+    zone: eu-west-1a
+  - id: subnet-0bc5b302f7e88af04
+    name: utility-eu-west-1b
+    type: Utility
+    zone: eu-west-1b
+  - id: subnet-01c0a7c7de3307887
+    name: utility-eu-west-1c
+    type: Utility
+    zone: eu-west-1c
+  # tf2kops end
+  topology:
+    bastion:
+      bastionPublicName: bastion.k8s.regevd.dev.okro.io
+    dns:
+      type: Public
+    masters: private
+    nodes: private
+
+---
+
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: null
+  labels:
+    kops.k8s.io/cluster: k8s.regevd.dev.okro.io
+  name: master-eu-west-1a
+spec:
+  image: kope.io/k8s-1.9-debian-jessie-amd64-hvm-ebs-2018-03-11
+  machineType: t2.medium
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: master-eu-west-1a
+  role: Master
+  subnets:
+  - eu-west-1a
+
+---
+
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: null
+  labels:
+    kops.k8s.io/cluster: k8s.regevd.dev.okro.io
+  name: master-eu-west-1b
+spec:
+  image: kope.io/k8s-1.9-debian-jessie-amd64-hvm-ebs-2018-03-11
+  machineType: t2.medium
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: master-eu-west-1b
+  role: Master
+  subnets:
+  - eu-west-1b
+
+---
+
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: null
+  labels:
+    kops.k8s.io/cluster: k8s.regevd.dev.okro.io
+  name: master-eu-west-1c
+spec:
+  image: kope.io/k8s-1.9-debian-jessie-amd64-hvm-ebs-2018-03-11
+  machineType: t2.medium
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: master-eu-west-1c
+  role: Master
+  subnets:
+  - eu-west-1c
+
+---
+
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: null
+  labels:
+    kops.k8s.io/cluster: k8s.regevd.dev.okro.io
+  name: nodes
+spec:
+  image: kope.io/k8s-1.9-debian-jessie-amd64-hvm-ebs-2018-03-11
+  machineType: t2.medium
+  maxSize: 3
+  minSize: 3
+  nodeLabels:
+    kops.k8s.io/instancegroup: nodes
+  role: Node
+  subnets:
+  - eu-west-1a
+  - eu-west-1b
+  - eu-west-1c
+
+---
+
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: null
+  labels:
+    kops.k8s.io/cluster: k8s.regevd.dev.okro.io
+  name: node-prometheus-eu-west1-a
+spec:
+  image: kope.io/k8s-1.9-debian-jessie-amd64-hvm-ebs-2018-03-11
+  machineType: t2.medium
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: nodes
+    okro.io/isolate: prometheus
+  role: Node
+  taints:
+  - "okro.io/isolate=prometheus:NoSchedule"
+  subnets:
+  - eu-west-1a
+
+---
+
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: null
+  labels:
+    kops.k8s.io/cluster: k8s.regevd.dev.okro.io
+  name: node-prometheus-eu-west1-b
+spec:
+  image: kope.io/k8s-1.9-debian-jessie-amd64-hvm-ebs-2018-03-11
+  machineType: t2.medium
+  maxSize: 1
+  minSize: 1
+  nodeLabels:
+    kops.k8s.io/instancegroup: nodes
+    okro.io/isolate: prometheus
+  role: Node
+  taints:
+  - "okro.io/isolate=prometheus:NoSchedule"
+  subnets:
+  - eu-west-1b
+
+---
+
+apiVersion: kops/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: null
+  labels:
+    kops.k8s.io/cluster: k8s.regevd.dev.okro.io
+  name: bastions
+spec:
+  associatePublicIp: true
+  image: kope.io/k8s-1.9-debian-jessie-amd64-hvm-ebs-2018-03-11
+  machineType: t2.micro
+  maxSize: 3
+  minSize: 3
+  role: Bastion
+  subnets:
+  - utility-eu-west-1a
+  - utility-eu-west-1b
+  - utility-eu-west-1c

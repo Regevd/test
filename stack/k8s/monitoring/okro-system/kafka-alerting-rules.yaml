@@ -1,0 +1,81 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    app: kafka
+    prometheus: k8s # Prometheus object name
+    role: alert-rules
+  name: kafka-alerting-rules
+  namespace: okro-system
+spec:
+  groups:
+  - name: kafka
+    rules:
+    - alert: KafkaUnderReplicatedPartitions
+      expr: kafka_server_replicamanager_underreplicatedpartitions > 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Kafka broker {{ $labels.instance }} has {{ $value }} under replicated partitions"
+    - alert: KafkaNoActiveController
+      expr: sum(kafka_controller_kafkacontroller_activecontrollercount) != 1
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Kafka has no active controller"
+    - alert: KafkaOfflinePartitions
+      expr: kafka_controller_kafkacontroller_offlinepartitionscount > 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Kafka broker {{ $labels.instance }} has {{ $value }} offline partitions"   
+    - alert: KafkaUncleanLeaderElections
+      expr: kafka_controller_controllerstats_uncleanleaderelectionspersec > 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Kafka is having unclean leader elections"
+    - alert: KafkaHighNetworkLoad
+      expr: avg(kafka_network_processor_idlepercent_networkprocessor) by (instance) < 0.3
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Kafka broker {{ $labels.instance }} is under high netwotk load"
+        desc: "{{ $labels.instance }} network processors are less than 30% idle for the last 5m"
+    - alert: KafkaHighIsrShrinkRate
+      expr: rate(kafka_server_replicamanager_isrshrinks_total[1m]) > 0
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Kafka broker {{ $labels.instance }} has high ISR shrink rate"
+    - alert: KafkaNodeHighCPUUsage
+      expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{job="kafka",mode="idle"}[5m])) * 100) > 90
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "{{$labels.instance}}: High CPU usage detected"
+        desc: "Kafka node {{ $labels.instance }}: CPU usage is above 90% (current value is: {{ $value }})"
+    - alert: KafkaNodeHighDiskUsage
+      expr: 100 - (node_filesystem_free{job="kafka"} ) / node_filesystem_size{job="kafka"} * 100 > 80
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: "{{$labels.instance}}: High disk usage detected"
+        desc: "Kafka node {{ $labels.instance }}: Disk usage on mountpoint '/' is above 80% (current value is: {{ $value }})"
+        mount_point: "{{ $labels.mountpoint }}%"
+
+
+
+
+
+
+
+        

@@ -1,0 +1,24 @@
+apiVersion: "rbac.istio.io/v1alpha1"
+kind: ServiceRole
+metadata:
+  name: jaeger-writer
+  namespace: team1-system
+spec:
+  rules:
+  - services:
+    - "jaeger-collector.team1-system.svc.cluster.local"
+    paths: ["*"]
+    methods: ["*"]
+---
+apiVersion: "rbac.istio.io/v1alpha1"
+kind: ServiceRoleBinding
+metadata:
+  name: jaeger-writer
+  namespace: team1-system
+spec:
+  subjects:
+  - properties:
+      source.namespace: "team1"
+  roleRef:
+    kind: ServiceRole
+    name: jaeger-writer

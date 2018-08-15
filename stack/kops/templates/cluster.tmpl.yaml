@@ -1,0 +1,157 @@
+apiVersion: kops/v1alpha2
+kind: Cluster
+metadata:
+  creationTimestamp: null
+  name: $NAME
+spec:
+  api:
+    loadBalancer:
+      type: Public
+      idleTimeoutSeconds: 1800
+  authorization:
+    rbac: {}
+  channel: stable
+  cloudProvider: aws
+  clusterDNSDomain: cluster.local
+  configBase: s3://dev-okro-io/$NAME
+  etcdClusters:
+  - name: main
+    version: 3.1.17
+    image: gcr.io/google_containers/etcd:3.1.17
+    enableEtcdTLS: true
+    enableTLSAuth: true
+    etcdMembers:
+    - instanceGroup: master-eu-west-1a
+      name: a
+      encryptedVolume: true
+    - instanceGroup: master-eu-west-1b
+      name: b
+      encryptedVolume: true
+    - instanceGroup: master-eu-west-1c
+      name: c
+      encryptedVolume: true
+  - name: events
+    version: 3.1.17
+    image: gcr.io/google_containers/etcd:3.1.17
+    enableEtcdTLS: true
+    enableTLSAuth: true
+    etcdMembers:
+    - instanceGroup: master-eu-west-1a
+      name: a
+      encryptedVolume: true
+    - instanceGroup: master-eu-west-1b
+      name: b
+      encryptedVolume: true
+    - instanceGroup: master-eu-west-1c
+      name: c
+      encryptedVolume: true
+  encryptionConfig: true
+  fileAssets:
+    - name: audit-policy.conf template
+      path: /srv/kubernetes/audit-policy.conf
+      roles:
+      - Master
+      content: $AUDIT_POLICY
+      isBase64: true
+  iam:
+    allowContainerRegistry: true
+    legacy: false
+  additionalPolicies:
+      node: |
+        [
+          {
+            "Effect": "Allow",
+            "Action": ["sts:AssumeRole"],
+            "Resource": "*"
+          }
+        ]
+  kubeAPIServer:
+    image: gcr.io/google_containers/kube-apiserver:v1.9.9
+    securePort: 443
+    insecurePort: 8080
+    #insecurePort: 0 # need to support HealthCheck using secure port first
+    address: 127.0.0.1
+    admissionControl:
+    - Initializers
+    - NamespaceLifecycle
+    - LimitRanger
+    - ServiceAccount
+    - PersistentVolumeLabel
+    - DefaultStorageClass
+    - DefaultTolerationSeconds
+    - MutatingAdmissionWebhook
+    - ValidatingAdmissionWebhook
+    - NodeRestriction
+    - ResourceQuota
+    - AlwaysPullImages
+    - Priority
+    #- DenyEscalatingExec # temoprary disabled to allow access
+    #- SecurityContextDeny # temporary disabled to allow access
+    #- PodSecurityPolicy # waiting for policy implementation
+    #- EventRateLimit # first need to: 1. support admission-control-config-file argument. 2. implement the policy
+    allowPrivileged: true
+    anonymousAuth: false
+    auditLogMaxAge: 31
+    auditLogMaxBackups: 10
+    auditLogMaxSize: 100
+    auditLogPath: /var/log/kube-apiserver-audit.log
+    auditPolicyFile: /srv/kubernetes/audit-policy.conf
+    authorizationMode: "Node,RBAC"
+    featureGates:
+      PodPriority: "true"
+    oidcIssuerURL: "https://dev-405616.oktapreview.com/oauth2/default"
+    oidcClientID: 0oafiqm6by9qgsCE40h7
+    oidcUsernameClaim: user_email
+    oidcUsernamePrefix: "oidc:"
+    oidcGroupsClaim: groups
+    oidcGroupsPrefix: "oidc:"
+    runtimeConfig:
+      "scheduling.k8s.io/v1alpha1": "true"
+      "admissionregistration.k8s.io/v1alpha1": "true"
+  kubeControllerManager:
+    image: gcr.io/google_containers/kube-controller-manager:v1.9.9
+    terminatedPodGCThreshold: 200
+    useServiceAccountCredentials: true
+  kubeProxy:
+    image: gcr.io/google_containers/kube-proxy:v1.9.9
+  kubeScheduler:
+    image: gcr.io/google_containers/kube-scheduler:v1.9.9
+  kubelet:
+    anonymousAuth: false
+    podInfraContainerImage: gcr.io/google_containers/pause-amd64:3.0
+    kubeletCgroups: "/systemd/system.slice"
+    runtimeCgroups: "/systemd/system.slice"
+    readOnlyPort: 0
+    streamingConnectionIdleTimeout: "10m"
+    featureGates:
+      #RotateKubeletClientCertificate: "true" # has no meaning without --rotate-certificates=true
+      #RotateKubeletServerCertificate: "true" # has no meaning without --rotate-server-certificates=true
+  masterKubelet:
+    anonymousAuth: false
+    podInfraContainerImage: gcr.io/google_containers/pause-amd64:3.0
+    kubeletCgroups: "/systemd/system.slice"
+    runtimeCgroups: "/systemd/system.slice"
+    registerSchedulable: false
+    readOnlyPort: 0
+    streamingConnectionIdleTimeout: "10m"
+    featureGates:
+      #RotateKubeletClientCertificate: "true" # has no meaning without --rotate-certificates=true
+      #RotateKubeletServerCertificate: "true" # has no meaning without --rotate-server-certificates=true
+  kubernetesApiAccess:
+  - 0.0.0.0/0
+  kubernetesVersion: 1.9.9
+  masterPublicName: api.$NAME
+  networking:
+    canal:
+      prometheusMetricsEnabled: true
+  nonMasqueradeCIDR: 100.64.0.0/10
+  sshAccess:
+  - 0.0.0.0/0
+$TF2KOPS
+  topology:
+    bastion:
+      bastionPublicName: bastion.$NAME
+    dns:
+      type: Public
+    masters: private
+    nodes: private

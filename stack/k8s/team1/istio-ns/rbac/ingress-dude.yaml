@@ -1,0 +1,27 @@
+apiVersion: "rbac.istio.io/v1alpha1"
+kind: ServiceRole
+metadata:
+  name: ingress-dude
+  namespace: team1
+spec:
+  rules:
+  - services:
+    - "dude.team1.svc.cluster.local"
+    paths:
+    - "/hi/*"
+    - "/bye/*"
+    methods:
+    - "GET"
+---
+apiVersion: "rbac.istio.io/v1alpha1"
+kind: ServiceRoleBinding
+metadata:
+  name: ingress-dude
+  namespace: team1
+spec:
+  subjects:
+  - properties:
+      source.namespace: "istio-system" # just as an a example - should be the ingress SVID
+  roleRef:
+    kind: ServiceRole
+    name: ingress-dude
