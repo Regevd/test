@@ -1,3 +1,3 @@
 # okro
 
-Main repo for all okro subprojects.
+Min repo for all okro subprojects.
